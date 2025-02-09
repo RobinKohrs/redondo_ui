@@ -3,9 +3,10 @@
 	import { createSearchIndex } from '$lib/createSearchIndex';
 	import debounce from 'lodash.debounce';
 
+	let {selected_regions_enriched = $bindable([])} = $props()
 	let searchQuery = $state('');
 	let searchResults = $state([]);
-	$inspect(searchResults);
+	let showSearchResults = $state(true)
 	let currentPrefix = $state('');
 	let fuse = null;
 
@@ -15,6 +16,7 @@
 			const data = await loadIndexData(currentPrefix);
 			fuse = createSearchIndex(data);
 			searchResults = fuse.search(searchQuery).slice(0, 5);
+			showSearchResults = true
 		} else {
 			searchResults = [];
 		}
@@ -24,6 +26,17 @@
 		searchQuery = event.target.value;
 		debouncedSearch();
 	}
+
+	let selected_regions = $state([])
+	$effect(() => {
+		 selected_regions_enriched = selected_regions.map(region => {
+			const path = `https://raw.githubusercontent.com/RobinKohrs/redondo_data/refs/heads/main/static/geodata/communes_single/${region.prefix}/${region.name_clean}.geojson`
+			return {
+				...region,
+				path: path
+			}
+		})
+	})
 </script>
 
 <div class="search-container relative">
@@ -34,11 +47,17 @@
 		placeholder="Type at least 2 letters..."
 	/>
 	<span class="bottom-glow"></span>
-	<div class="search-results absolute top-full mt-1">
+	{#if showSearchResults}
+	<div class="search-results absolute top-full mt-1 flex flex-col gap-2 w-full">
 		{#each searchResults as result}
-			<div>{result.item.name_real}</div>
+			<div class="cursor-pointer hover:outline-red-200 hover:outline p-1" onclick={() => {
+				selected_regions.push({prefix: currentPrefix, ...result.item})
+				searchQuery=""
+				showSearchResults = false
+			}} >{result.item.name_real}</div>
 		{/each}
 	</div>
+	{/if}
 </div>
 
 <style>
@@ -49,21 +68,19 @@
 	input {
 		border: 1px solid var(-fg-color);
 		color: var(--fg-color);
-		letter-spacing: 2px;
-		font-size: 1.5rem;
+		letter-spacing: 4px;
+		font-size: 1.2rem;
 		transition: all 0.2s;
 	}
 	input:focus {
-		letter-spacing: 5px;
-		font-size: 2rem;
 		outline: none;
 	}
 
 	input:focus ~ .bottom-glow {
 		display: block;
 		-webkit-box-shadow: 0px 0px 105px 10px var(--fg-color);
-		/* -moz-box-shadow: 0px 0px 105px 45px rgba(45, 255, 196, 0.9);
-		box-shadow: 0px 0px 105px 45px rgba(45, 255, 196, 0.9); */
+		-moz-box-shadow: 0px 0px 105px 45px var(--fg-color);
+		box-shadow: 0px 0px 105px 45px var(var(--fg-color));
 	}
 
 	.search-results {
