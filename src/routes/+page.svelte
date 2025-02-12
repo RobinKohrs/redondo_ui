@@ -8,9 +8,11 @@
 	$inspect(selected_regions_enriched);
 </script>
 
-<div class="flex justify-center py-2">
-	<Search bind:selected_regions_enriched />
-	{#if selected_regions_enriched.length > 0}
-		<MiniMap {selected_regions_enriched} />
-	{/if}
-</div>
+<Search bind:selected_regions_enriched />
+{#if selected_regions_enriched.length > 0}
+	<div class="map-container">
+		{#each selected_regions_enriched as region}
+			<MiniMap selected_region_enriched={region} />
+		{/each}
+	</div>
+{/if}
