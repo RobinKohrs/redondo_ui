@@ -1,7 +1,8 @@
 <!-- GeoJSONLoader.svelte -->
 <script>
+	import { draw, fade } from 'svelte/transition';
+	import { tick } from 'svelte';
 	import { geoMercator, geoPath, geoAlbers } from 'd3-geo';
-	import { draw } from 'svelte/transition';
 	let { selected_region_enriched } = $props();
 
 	let geojsonData = $state(); // Array to store fetched GeoJSON data
@@ -34,10 +35,11 @@
 	let path = $state();
 
 	$effect(async () => {
+		await tick(); // Ensure DOM updates before adding new data
+
 		try {
 			data = await loadGeoJSON(selected_region_enriched.path);
 
-			console.log(width, height);
 			let featureToFitTo = data.features.find((f) => f.properties.type === 'circle');
 			projection = geoMercator().fitExtent(
 				[
@@ -62,23 +64,21 @@
 {#if !data.features}
 	<div class="spinner"></div>
 {:else}
-	<!-- draw the map here -->
 	<div class="single-map">
 		{#if data.features[0].path}
-			{#each data.features as feature}
-				<svg width={width + 20} height={height + 20} viewBox="0 0  {width} {height}">
+			<svg width={width + 20} height={height + 20} viewBox="0 0  {width} {height}">
+				{#each data.features as feature}
 					<g>
 						<path
-							in:draw={{ delay: 1000, duration: 1000 }}
-							out:draw={{ duration: 500 }}
+							class="draw-path"
 							d={feature.path}
-							stroke="black"
+							stroke="purple"
 							fill="transparent"
 							stroke-width="2"
 						/>
 					</g>
-				</svg>
-			{/each}
+				{/each}
+			</svg>
 		{/if}
 	</div>
 {/if}
@@ -100,6 +100,21 @@
 		}
 		100% {
 			transform: rotate(360deg);
+		}
+	}
+
+	.draw-path {
+		stroke-dasharray: 800; /* Adjust this based on the length of your path */
+		stroke-dashoffset: 800;
+		animation: draw 3s linear forwards;
+	}
+
+	@keyframes draw {
+		from {
+			stroke-dashoffset: 500;
+		}
+		to {
+			stroke-dashoffset: 0;
 		}
 	}
 </style>

@@ -2,6 +2,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import Search from '$lib/Search.svelte';
+	import { draw } from 'svelte/transition';
 	import MiniMap from '$lib/MiniMap.svelte';
 
 	let selected_regions_enriched = $state([]);
