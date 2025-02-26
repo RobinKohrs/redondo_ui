@@ -34,9 +34,8 @@
 	let projection = $state();
 	let path = $state();
 
+	$inspect(data);
 	$effect(async () => {
-		await tick(); // Ensure DOM updates before adding new data
-
 		try {
 			data = await loadGeoJSON(selected_region_enriched.path);
 
@@ -53,26 +52,63 @@
 			// Extract the features
 			data.features = data.features.map((f) => ({
 				...f, // Keep existing feature properties
-				path: path(f) // Add the path property
+				path: path(f), // Add the path property
+				show: f.properties.type === 'outline' ? true : false
 			}));
 		} catch (error) {
 			console.error('Failed to load GeoJSON:', error);
 		}
 	});
+
+	let shapes = [
+		{
+			display: 'Ol.',
+			id: 'outline',
+			color: 'purple',
+			show: true
+		},
+		{
+			display: 'Ci.',
+			id: 'circle',
+			color: 'pink',
+			show: true
+		},
+		{
+			display: 'BB.',
+			id: 'bb',
+			color: 'beige',
+			show: false
+		},
+		{
+			display: 'BBO.',
+			id: 'oriented_bb',
+			color: 'cornflowerblue',
+			show: false
+		}
+	];
 </script>
 
 {#if !data.features}
 	<div class="spinner"></div>
 {:else}
 	<div class="single-map">
-		{#if data.features[0].path}
+		<div class="controls flex gap-2">
+			{#each shapes as shape_control}
+				<button
+					style="background: {shape_control.color};"
+					class="cursor-pointer rounded-sm border-black p-1">{shape_control.display}</button
+				>
+			{/each}
+		</div>
+
+		{#if shapes}
 			<svg width={width + 20} height={height + 20} viewBox="0 0  {width} {height}">
 				{#each data.features as feature}
 					<g>
 						<path
 							class="draw-path"
 							d={feature.path}
-							stroke="purple"
+							stroke={feature.show ? 'purple' : 'transparent'}
 							fill="transparent"
 							stroke-width="2"
 						/>
